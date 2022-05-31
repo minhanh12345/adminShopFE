@@ -51,24 +51,24 @@
                     >
                     <ul class="list-unstyled chat-list">
                       <li class="" *ngFor="let data of chatData">
-                        <a href="javascript: void(0);" (click)="chatUsername(data.name)">
+                        <a href="javascript: void(0);" (click)="chatUsername(data.id)">
                           <div class="media">
                             <div class="align-self-center me-3">
-                              <i class="mdi mdi-circle text-{{data.color}} font-size-10"></i>
+                              <i class="mdi mdi-circle text-{{data.id}} font-size-10"></i>
                             </div>
-                            <div class="align-self-center me-3" *ngIf="data.image">
-                              <img src="{{ data.image }}" class="rounded-circle avatar-xs" alt="">
+                            <div class="align-self-center me-3" *ngIf="data.id">
+                              <img src="{{ data.id }}" class="rounded-circle avatar-xs" alt="">
                             </div>
-                            <div class="avatar-xs align-self-center me-3" *ngIf="!data.image">
+                            <div class="avatar-xs align-self-center me-3" *ngIf="!data.id">
                               <span class="avatar-title rounded-circle bg-soft bg-primary text-primary">
-                                {{data.name.charAt(0)}}
+                                {{data.id}}
                               </span>
                             </div>
                             <div class="media-body overflow-hidden">
-                              <h5 class="text-truncate font-size-14 mb-1">{{ data.name }}</h5>
-                              <p class="text-truncate mb-0">{{ data.message }}</p>
+                              <h5 class="text-truncate font-size-14 mb-1">{{ data.id }}</h5>
+                              <p class="text-truncate mb-0">{{ data.id }}</p>
                             </div>
-                            <div class="font-size-11">{{ data.time }}</div>
+                            <div class="font-size-11">{{ data.id }}</div>
                           </div>
                         </a>
                       </li>
@@ -333,7 +333,7 @@
                 </li>
                 <li *ngFor="let data of chatMessagesData" [ngClass]="
               {
-                'right': data.align === 'right'
+
               }">
                   <div class="conversation-list">
                     <div class="dropdown" ngbDropdown>
@@ -349,11 +349,11 @@
                       </div>
                     </div>
                     <div class="ctext-wrap">
-                      <div class="conversation-name">{{ data.name }}</div>
+                      <div class="conversation-name">{{ data.byUser }}</div>
                       <p>
-                        {{ data.message }}
+                        {{ data.content }}
                       </p>
-                      <p class="chat-time mb-0"><i class="bx bx-time-five align-middle me-1"></i> {{ data.time }}</p>
+                      <p class="chat-time mb-0"><i class="bx bx-time-five align-middle me-1"></i> {{ data.timeCreate }}</p>
                     </div>
 
                   </div>

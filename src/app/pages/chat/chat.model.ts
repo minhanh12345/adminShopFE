@@ -1,14 +1,14 @@
 export interface ChatUser {
-    image?: string;
-    name: string;
-    message: string;
-    time: string;
-    color: string;
+   id:number;
+   user1:number;
+   user2:number;
+  timeCreate:string;
 }
 
 export interface ChatMessage {
-    align?: string;
-    name?: string;
-    message: string;
-    time: string;
+    id: number;
+  content: string;
+  byUser: number;
+  idRoom: number;
+  timeCreate:String;
 }

@@ -1,9 +1,14 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, Validators, FormGroup } from '@angular/forms';
+import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
+import {FormBuilder, Validators, FormGroup} from '@angular/forms';
 
-import { ChatUser, ChatMessage } from './chat.model';
+import {ChatUser, ChatMessage} from './chat.model';
+import * as Stomp from '@stomp/stompjs';
+import * as SockJS from 'sockjs-client';
 
-import { chatData, chatMessagesData } from './data';
+import {chatData, chatMessagesData} from './data';
+import {HttpClient} from "@angular/common/http";
+import {map} from "rxjs/operators";
+
 
 @Component({
   selector: 'app-chat',
@@ -15,9 +20,10 @@ export class ChatComponent implements OnInit, AfterViewInit {
   @ViewChild('scrollEle') scrollEle;
   @ViewChild('scrollRef') scrollRef;
 
+
   username = 'Steven Franklin';
 
-  // bread crumb items
+// bread crumb items
   breadCrumbItems: Array<{}>;
 
   chatData: ChatUser[];
@@ -25,16 +31,21 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
   formData: FormGroup;
 
-  // Form submit
+// Form submit
   chatSubmit: boolean;
 
+  greetings: ChatMessage[];
   usermessage: string;
+  disabled = true;
+  name: string;
+  private stompClient = null;
 
-  constructor(public formBuilder: FormBuilder) {
+  constructor(public formBuilder: FormBuilder, private http: HttpClient
+  ) {
   }
 
   ngOnInit() {
-    this.breadCrumbItems = [{ label: 'Skote' }, { label: 'Chat', active: true }];
+    this.breadCrumbItems = [{label: 'Skote'}, {label: 'Chat', active: true}];
 
     this.formData = this.formBuilder.group({
       message: ['', [Validators.required]],
@@ -43,6 +54,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
     this.onListScroll();
 
     this._fetchData();
+    console.log(localStorage.getItem("currentUser"))
   }
 
   ngAfterViewInit() {
@@ -57,11 +69,16 @@ export class ChatComponent implements OnInit, AfterViewInit {
     return this.formData.controls;
   }
 
-  private _fetchData() {
-    this.chatData = chatData;
-    this.chatMessagesData = chatMessagesData;
-  }
+  private
 
+  _fetchData() {
+    this.http.get<any>(`http://localhost:8080/chat/getRoomsByUser?userId=` + localStorage.getItem("currentUser"))
+      .subscribe(data => {
+        this.chatData = data.content
+      })
+
+
+  }
 
 
   onListScroll() {
@@ -75,15 +92,11 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
   chatUsername(name) {
     this.username = name;
-    this.usermessage = 'Hello';
-    this.chatMessagesData = [];
-    const currentDate = new Date();
+    this.http.get<any>(`http://localhost:8080/chat/getAllMessByRoom?idRoom=` + name)
+      .subscribe(data => {
+        this.chatMessagesData = data.content
+      })
 
-    this.chatMessagesData.push({
-      name: this.username,
-      message: this.usermessage,
-      time: currentDate.getHours() + ':' + currentDate.getMinutes()
-    });
 
   }
 
@@ -95,12 +108,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
     const currentDate = new Date();
     if (this.formData.valid && message) {
       // Message Push in Chat
-      this.chatMessagesData.push({
-        align: 'right',
-        name: 'Henry Wells',
-        message,
-        time: currentDate.getHours() + ':' + currentDate.getMinutes()
-      });
+
       this.onListScroll();
 
       // Set Form Data Reset
@@ -110,6 +118,40 @@ export class ChatComponent implements OnInit, AfterViewInit {
     }
 
     this.chatSubmit = true;
+
+    this.stompClient.send(
+      '/gkz/hello',
+      {},
+      JSON.stringify({'name': this.name})
+    );
   }
+
+  connect() {
+    const socket = new SockJS('http://localhost:8080/gkz-stomp-endpoint');
+    this.stompClient = Stomp.Stomp.over(socket);
+
+    const _this = this;
+    this.stompClient.connect({}, function (frame) {
+      _this.setConnected(true);
+      console.log('Connected: ' + frame);
+
+      _this.stompClient.subscribe('/topic/hi', function (hello) {
+        _this.showGreeting(JSON.parse(hello.body).greeting);
+      });
+    });
+  }
+
+  setConnected(connected: boolean) {
+    this.disabled = !connected;
+
+    if (connected) {
+      this.greetings = [];
+    }
+  }
+
+  showGreeting(message) {
+    this.greetings.push(message);
+  }
+
 
 }
