@@ -2,12 +2,9 @@ import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
 import {FormBuilder, Validators, FormGroup} from '@angular/forms';
 
 import {ChatUser, ChatMessage} from './chat.model';
-import * as Stomp from '@stomp/stompjs';
-import * as SockJS from 'sockjs-client';
-
-import {chatData, chatMessagesData} from './data';
 import {HttpClient} from "@angular/common/http";
-import {map} from "rxjs/operators";
+import { RxStompService } from './RxStompService';
+import { rxStompServiceFactory } from './StompServiceFactory';
 
 
 @Component({
@@ -28,7 +25,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
   chatData: ChatUser[];
   chatMessagesData: ChatMessage[];
-
+  messageUser: ChatMessage;
   formData: FormGroup;
 
 // Form submit
@@ -38,10 +35,13 @@ export class ChatComponent implements OnInit, AfterViewInit {
   usermessage: string;
   disabled = true;
   name: string;
-  private stompClient = null;
 
-  constructor(public formBuilder: FormBuilder, private http: HttpClient
-  ) {
+
+
+
+  constructor(public formBuilder: FormBuilder, private http: HttpClient,private rxStompService: RxStompService
+    ) {
+
   }
 
   ngOnInit() {
@@ -55,6 +55,25 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
     this._fetchData();
     console.log(localStorage.getItem("currentUser"))
+
+    this.rxStompService.watch(`/app/chat/${this.name}`).subscribe(m => {
+      const message= JSON.parse(m.body);
+      this.chatMessagesData.push(message);
+    });
+
+
+  }
+
+  send(message:string,userId:number,chatRoomId:number){
+   let msgUser:ChatMessage
+    msgUser.content=message
+    msgUser.byUser=userId
+    msgUser.idRoom=chatRoomId
+
+  }
+
+  sendMessage(message: ChatMessage) {
+    this.rxStompService.publish({destination: `/app/chat/1`, body: JSON.stringify(message)});
   }
 
   ngAfterViewInit() {
@@ -69,15 +88,12 @@ export class ChatComponent implements OnInit, AfterViewInit {
     return this.formData.controls;
   }
 
-  private
 
   _fetchData() {
-    this.http.get<any>(`http://localhost:8080/chat/getRoomsByUser?userId=` + localStorage.getItem("currentUser"))
+    this.http.get<any>(`http://localhost:8083/chat/getRoomsByUser?userId=` + localStorage.getItem("currentUser"))
       .subscribe(data => {
         this.chatData = data.content
       })
-
-
   }
 
 
@@ -92,12 +108,10 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
   chatUsername(name) {
     this.username = name;
-    this.http.get<any>(`http://localhost:8080/chat/getAllMessByRoom?idRoom=` + name)
+    this.http.get<any>(`http://localhost:8083/chat/getAllMessByRoom?idRoom=` + name)
       .subscribe(data => {
         this.chatMessagesData = data.content
       })
-
-
   }
 
   /**
@@ -119,39 +133,9 @@ export class ChatComponent implements OnInit, AfterViewInit {
 
     this.chatSubmit = true;
 
-    this.stompClient.send(
-      '/gkz/hello',
-      {},
-      JSON.stringify({'name': this.name})
-    );
+
   }
 
-  connect() {
-    const socket = new SockJS('http://localhost:8080/gkz-stomp-endpoint');
-    this.stompClient = Stomp.Stomp.over(socket);
-
-    const _this = this;
-    this.stompClient.connect({}, function (frame) {
-      _this.setConnected(true);
-      console.log('Connected: ' + frame);
-
-      _this.stompClient.subscribe('/topic/hi', function (hello) {
-        _this.showGreeting(JSON.parse(hello.body).greeting);
-      });
-    });
-  }
-
-  setConnected(connected: boolean) {
-    this.disabled = !connected;
-
-    if (connected) {
-      this.greetings = [];
-    }
-  }
-
-  showGreeting(message) {
-    this.greetings.push(message);
-  }
 
 
 }

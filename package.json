@@ -37,6 +37,7 @@
     "@ngx-translate/core": "^13.0.0",
     "@ngx-translate/http-loader": "^6.0.0",
     "@nicky-lenaers/ngx-scroll-to": "^9.0.0",
+    "@stomp/ng2-stompjs": "^8.0.0",
     "@stomp/stompjs": "^6.1.2",
     "@types/chartist": "^0.11.0",
     "angular-archwizard": "^7.0.0",
